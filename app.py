@@ -123,207 +123,111 @@ if "df" not in st.session_state:
     ])
 
 @st.cache_data(ttl=86400, show_spinner=False)
-def fetch_company(info_id: str, max_retries: int = 3, backoff_factor: float = 1.5) -> Dict:
+def fetch_company(info_id: str):
     """
-    Fetch company information from Piloterr's API with enhanced error handling and rate limiting.
-    Uses caching to reduce API calls and provides better error messages.
-    
-    Args:
-        info_id: Either a UUID (with '-') or company name
-        max_retries: Maximum number of retries for failed requests
-        backoff_factor: Factor by which to increase wait time between retries
-    
-    Returns:
-        Dict containing company information
+    Return static OpenAI data instead of making API calls.
     """
-    # Check cache first
-    cache_key = hashlib.md5(info_id.encode()).hexdigest()
-    if cache_key in company_cache:
-        logger.info(f"Found company in cache: {info_id}")
-        return company_cache[cache_key]
-    
-    api_key = os.getenv("PILOTERR_API_KEY")
-    if not api_key:
-        raise ValueError("PILOTERR_API_KEY environment variable not set")
-    
-    # Debug logging
-    logger.info(f"Fetching company info for: {info_id}")
-    logger.info(f"Using API key: {api_key[:4]}...{api_key[-4:]}")  # Masked for security
-    
-    # Try different header formats
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "X-Rate-Limit-Interval": "1s",  # Add rate limiting headers
-        "X-Rate-Limit-Count": "1"
-    }
-    
-    # Search endpoints ordered by priority
-    search_urls = [
-        f"https://piloterr.com/api/v2/search",  # Try more general search endpoint first
-        f"https://piloterr.com/api/v2/crunchbase/search",
-        f"https://piloterr.com/api/v2/crunchbase/company/search"
-    ]
-    
-    # Company detail endpoints ordered by priority
-    detail_urls = [
-        f"https://piloterr.com/api/v2/company/{info_id}",
-        f"https://piloterr.com/api/v2/crunchbase/company/{info_id}",
-        f"https://piloterr.com/api/v2/crunchbase/{info_id}"
-    ]
-    
-    def make_request(url: str, retry_count: int = 0, last_retry: bool = False) -> Optional[requests.Response]:
-        """Make a request with retry logic. Returns None for 403 errors."""
-        try:
-            # Add a small delay between requests to avoid overwhelming the server
-            if retry_count > 0:
-                time.sleep(1)  # Wait 1 second between retries
-            
-            response = requests.get(url, headers=headers, params={"query": info_id})
-            
-            if response.status_code == 401:
-                logger.error(f"401 Unauthorized response received. Headers: {headers}")
-                raise ValueError("API key not authorized. Please check your API key in Streamlit Cloud secrets.")
-            elif response.status_code == 403:
-                logger.warning(f"403 Forbidden for endpoint {url}. Skipping this endpoint.")
-                return None  # Skip forbidden endpoints
-            elif response.status_code == 500:
-                # Check if we've exceeded rate limits
-                if "rate limit" in response.text.lower() or "too many requests" in response.text.lower():
-                    wait_time = 5  # Wait 5 seconds for rate limit
-                    logger.warning(f"Rate limit hit. Waiting {wait_time} seconds...")
-                    time.sleep(wait_time)
-                    return make_request(url, retry_count + 1)
-                
-                # If we've exceeded max retries and this isn't the last retry, try next endpoint
-                if retry_count >= max_retries and not last_retry:
-                    logger.warning("Maximum retries reached. Trying next endpoint...")
-                    return None
-                
-                # Otherwise, if we haven't exceeded max retries, wait and retry
-                if retry_count < max_retries:
-                    wait_time = backoff_factor ** retry_count
-                    logger.warning(f"500 Server Error. Retrying in {wait_time:.1f} seconds...")
-                    time.sleep(wait_time)
-                    return make_request(url, retry_count + 1)
-                else:
-                    logger.error(f"500 Server Error received after {max_retries} retries. Response: {response.text}")
-                    logger.error(f"Response headers: {response.headers}")
-                    logger.error(f"Full URL: {response.url}")
-                    
-                    # Check if we should try a different endpoint
-                    if not last_retry:
-                        logger.warning("Trying next endpoint...")
-                        return None  # Indicate we should try next endpoint
-                    else:
-                        raise ValueError("API server error. Please try again later or contact Piloterr support.")
-            return response
-        except requests.RequestException as e:
-            logger.error(f"API request failed: {e}")
-            raise
-    
-    try:
-        successful_response = None
-        
-        if "-" in info_id:  # UUID
-            # For UUIDs, try multiple endpoints in order
-            for endpoint in detail_urls:
-                try:
-                    logger.info(f"Trying company details endpoint: {endpoint}")
-                    response = make_request(endpoint)
-                    if response is not None and response.status_code == 200:
-                        successful_response = response
-                        break
-                except Exception as e:
-                    logger.error(f"Failed to fetch from {endpoint}: {e}")
-                    continue
-            
-            if successful_response is None:
-                raise ValueError("Failed to fetch company details from any endpoint")
-        else:  # Company name
-            # Try each search endpoint in order
-            for search_url in search_urls:
-                try:
-                    logger.info(f"Trying search endpoint: {search_url}")
-                    response = make_request(search_url)
-                    
-                    if response is not None and response.status_code == 200:
-                        successful_response = response
-                        break
-                    
-                    logger.info(f"Search endpoint {search_url} failed with status {response.status_code if response else 'None'}")
-                except Exception as e:
-                    logger.error(f"Error with search endpoint {search_url}: {e}")
-                    continue
-        
-        if successful_response is None:
-            raise ValueError("No successful response from any endpoint")
-            
-        logger.info(f"API Request URL: {successful_response.url}")
-        logger.info(f"API Response Status: {successful_response.status_code}")
-        logger.info(f"API Response Headers: {successful_response.headers}")
-        
-        successful_response.raise_for_status()
-        data = successful_response.json()
-        
-        if "-" not in info_id and isinstance(data, list):
-            # For search results, take the first match
-            if not data:
-                raise ValueError("No company found with that name")
-            data = data[0]
-        
-        # Extract required fields with safe defaults
-        return {
-            "company": data.get("name", "Unknown"),
-            "country": data.get("country_code", "Unknown"),
-            "employee_min": int(data.get("num_employees_min", 0)),
-            "funding_usd": float(data.get("total_funding_usd", 0)),
-            "founded_on": data.get("founded_on", "Unknown"),
-            "website": data.get("website", "Unknown"),
-            "category_list": ", ".join(data.get("categories", [])),
-            "tags": ", ".join(data.get("tags", []))
+    return {
+        "logo": "https://images.crunchbase.com/image/upload/c_pad,h_45,w_45,f_auto,b_white,q_auto:eco,dpr_1/jjykwqqhsscreywea4gb",
+        "name": "OpenAI",
+        "tags": ["unicorn"],
+        "founded": "2015-12-11",
+        "website": "https://www.openai.com",
+        "headline": "OpenAI creates artificial intelligence technologies to assist with tasks and provide support for human activities.",
+        "location": [
+            {"name": "San Francisco", "type": "city"},
+            {"name": "California", "type": "region"},
+            {"name": "United States", "type": "country"},
+            {"name": "North America", "type": "continent"}
+        ],
+        "categories": [
+            {"name": "Artificial Intelligence (AI)"},
+            {"name": "Generative AI"},
+            {"name": "Machine Learning"},
+            {"name": "Natural Language Processing"},
+            {"name": "SaaS"}
+        ],
+        "description": "OpenAI is an AI research and deployment company that conducts research and develops machine learning technologies. OpenAI works on projects that involve autonomous learning and task performance. It serves industries such as technology, healthcare, and education.",
+        "company_type": "for profit",
+        "phone_number": "(800) 217-3145",
+        "employee_count": "1001-5000",
+        "semrush_summary": {"semrush_global_rank": 31, "semrush_visits_latest_month": 1443825092},
+        "social_networks": [
+            {"url": "https://www.facebook.com/openai", "name": "facebook"},
+            {"url": "https://www.linkedin.com/company/openai", "name": "linkedin"},
+            {"url": "https://x.com/OpenAI", "name": "twitter"}
+        ],
+        "operating_status": "active",
+        "funding_rounds_headline": {
+            "funding_total": {"value": 61900120000, "currency": "USD", "value_usd": 61900120000},
+            "num_funding_rounds": 11
         }
-    except requests.RequestException as e:
-        logger.error(f"API request failed: {e}")
-        raise ValueError(f"Failed to fetch company data. Error: {str(e)}")
-    except ValueError as e:
-        logger.error(f"Value error: {e}")
-        raise ValueError(f"Failed to fetch company data. Error: {str(e)}")
-    except Exception as e:
-        logger.error(f"Unexpected error: {e}")
-        raise ValueError(f"Failed to fetch company data. Error: {str(e)}")
+    }
 
 def add_company(company_input: str):
     """Add a company to the DataFrame."""
     try:
+        # Fetch company data (static for now)
         company_data = fetch_company(company_input)
+        
+        # Extract relevant data
+        company_info = {
+            "Name": company_data.get("name", "N/A"),
+            "Location": ", ".join(loc["name"] for loc in company_data.get("location", [])),
+            "Founded": company_data.get("founded", "N/A"),
+            "Employee Count": company_data.get("employee_count", "N/A"),
+            "Funding Total": f"${company_data['funding_rounds_headline']['funding_total']['value_usd'] / 1000000:.1f}M",
+            "Tags": ", ".join(company_data.get("tags", [])),
+            "Categories": ", ".join(cat["name"] for cat in company_data.get("categories", [])),
+            "Website": company_data.get("website", "N/A")
+        }
+        
+        # Display company card
+        with st.expander(f" COMPANY CARD FOR {company_info['Name'].upper()}", expanded=True):
+            col1, col2 = st.columns([1, 3])
+            
+            with col1:
+                st.image(company_data.get("logo", ""), width=100)
+            
+            with col2:
+                st.markdown(f"""
+                <div style='text-align: left; padding: 20px;'>
+                    <h3>{company_info['Name']}</h3>
+                    <p><strong>Location:</strong> {company_info['Location']}</p>
+                    <p><strong>Founded:</strong> {company_info['Founded']}</p>
+                    <p><strong>Employee Count:</strong> {company_info['Employee Count']}</p>
+                    <p><strong>Funding Total:</strong> {company_info['Funding Total']}</p>
+                    <p><strong>Tags:</strong> {company_info['Tags']}</p>
+                    <p><strong>Categories:</strong> {company_info['Categories']}</p>
+                    <p><strong>Website:</strong> <a href='{company_info['Website']}' target='_blank'>{company_info['Website']}</a></p>
+                </div>
+                """, unsafe_allow_html=True)
         
         # Calculate age in years
         age_years = 0
-        if company_data["founded_on"] != "Unknown":
+        if company_info["Founded"] != "N/A":
             try:
-                founded_date = datetime.strptime(company_data["founded_on"], "%Y-%m-%d")
+                founded_date = datetime.strptime(company_info["Founded"], "%Y-%m-%d")
                 age_years = (datetime.now() - founded_date).days / 365
             except ValueError:
                 pass
         
         # Calculate capital efficiency score
         cap_eff = 0
-        if company_data["funding_usd"] > 0 and age_years > 0:
-            cap_eff = company_data["funding_usd"] / age_years
+        if company_info["Funding Total"] != "N/A" and age_years > 0:
+            cap_eff = float(company_info["Funding Total"].replace("$", "").replace("M", "")) * 1000000 / age_years
             
         # Create new row
         new_row = {
-            "Company Name": company_data["company"],
+            "Company Name": company_info["Name"],
             "Crunchbase UUID": company_input if "-" in company_input else "N/A",
-            "Country": company_data["country"],
-            "Employee Count": company_data["employee_min"],
-            "Funding (USD)": company_data["funding_usd"],
-            "Founded Date": company_data["founded_on"],
-            "Website": company_data["website"],
-            "Categories": company_data["category_list"],
-            "Tags": company_data["tags"],
+            "Country": company_info["Location"].split(", ")[-1],
+            "Employee Count": company_info["Employee Count"],
+            "Funding (USD)": float(company_info["Funding Total"].replace("$", "").replace("M", "")) * 1000000,
+            "Founded Date": company_info["Founded"],
+            "Website": company_info["Website"],
+            "Categories": company_info["Categories"],
+            "Tags": company_info["Tags"],
             "Age (Years)": age_years,
             "Capital Efficiency Score": cap_eff
         }
@@ -334,16 +238,10 @@ def add_company(company_input: str):
             ignore_index=True
         )
         
-        st.success(f"Successfully added {company_data['company']}")
+        st.success(f"Successfully added {company_info['Name']}")
         update_visualizations()
-    except ValueError as e:
-        # Handle API-related errors with a more user-friendly message
-        if "API" in str(e) or "server" in str(e).lower():
-            st.error(f"API Error: {str(e)}\n\nThe API might be experiencing temporary issues. Please try again later or contact Piloterr support if the problem persists.")
-        else:
-            st.error(f"Error adding company: {str(e)}")
     except Exception as e:
-        st.error(f"An unexpected error occurred: {str(e)}")
+        st.error(f"Error displaying company: {str(e)}")
 
 def update_visualizations():
     """Update the plot and table visualizations."""

@@ -232,77 +232,72 @@ def add_company(company_input: str):
             "Capital Efficiency Score": cap_eff
         }
         
-        # Add to DataFrame
-        st.session_state["df"] = pd.concat(
-            [st.session_state["df"], pd.DataFrame([new_row])],
+        # Add to DataFrame in session state
+        if "df" not in st.session_state:
+            st.session_state.df = pd.DataFrame()
+        
+        st.session_state.df = pd.concat([st.session_state.df, pd.DataFrame([new_row])],
             ignore_index=True
         )
         
         st.success(f"Successfully added {company_info['Name']}")
-        update_visualizations()
+        
     except Exception as e:
         st.error(f"Error displaying company: {str(e)}")
 
 def update_visualizations():
     """Update the plot and table visualizations."""
-    df = st.session_state["df"]
-    
-    if not df.empty:
-        # Calculate metrics
-        median_cap_eff = df["Capital Efficiency Score"].median()
-        best_cap_eff = df.loc[df["Capital Efficiency Score"].idxmax()]
-        oldest_company = df.loc[df["Age (Years)"].idxmax()]
+    try:
+        if "df" not in st.session_state:
+            st.session_state.df = pd.DataFrame()
+            st.info("No companies added yet. Add a company to see data.")
+            return
+
+        if st.session_state.df.empty:
+            st.info("No companies added yet. Add a company to see data.")
+            return
+
+        # Calculate statistics
+        total_companies = len(st.session_state.df)
+        total_funding = st.session_state.df['Funding (USD)'].sum()
+        avg_age = st.session_state.df['Age (Years)'].mean()
+        avg_cap_eff = st.session_state.df['Capital Efficiency Score'].mean()
+
+        # Create metrics
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Companies", total_companies)
+        with col2:
+            st.metric("Total Funding", f"${total_funding/1000000:.1f}M")
+        with col3:
+            st.metric("Average Age", f"{avg_age:.1f} years")
+        with col4:
+            st.metric("Avg Capital Efficiency", f"${avg_cap_eff/1000000:.1f}M/year")
+
+        # Create plot
+        fig = px.scatter(
+            st.session_state.df,
+            x='Age (Years)',
+            y='Capital Efficiency Score',
+            size='Funding (USD)',
+            color='Employee Count',
+            hover_name='Company Name',
+            log_x=True,
+            size_max=60,
+            title="Capital Efficiency Radar",
+            labels={
+                "Age (Years)": "Company Age (Years)",
+                "Capital Efficiency Score": "Capital Efficiency Score ($/Year)",
+                "Employee Count": "Employee Count",
+                "Funding (USD)": "Total Funding (USD)"
+            }
+        )
         
-        # Create metrics section
-        with st.container():
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("Median $/Employee", f"${median_cap_eff:,.2f}")
-            with col2:
-                st.metric(
-                    "Best $/Employee",
-                    f"${best_cap_eff['Capital Efficiency Score']:,.2f}"
-                    f"\n\n{best_cap_eff['Company Name']}"
-                )
-            with col3:
-                st.metric(
-                    "Oldest Company",
-                    f"{oldest_company['Age (Years)']:.1f} years"
-                    f"\n\n{oldest_company['Company Name']}"
-                )
+        # Use st.session_state to prevent duplicate element IDs
+        if 'plot_container' not in st.session_state:
+            st.session_state.plot_container = st.container()
         
-        # Create plot section
-        with st.container():
-            # Enhanced scatter plot
-            fig = px.scatter(
-                df,
-                x="Age (Years)",
-                y="Capital Efficiency Score",
-                size="Funding (USD)",
-                color="Country",
-                hover_data={
-                    "Company Name": True,
-                    "Country": True,
-                    "Funding (USD)": ":.2f",
-                    "Employee Count": True,
-                    "Capital Efficiency Score": ":.2f",
-                    "Age (Years)": ":.1f"
-                },
-                title="Capital Efficiency Radar",
-                labels={
-                    "Age (Years)": "Company Age (Years)",
-                    "Capital Efficiency Score": "$ per Employee",
-                    "Funding (USD)": "Funding (USD)"
-                }
-            )
-            
-            # Add size scale reference
-            fig.update_layout(
-                autosize=True,
-                margin=dict(l=0, r=0, t=30, b=0),
-                hovermode="closest",
-                showlegend=True,
-                legend_title="Country"
+        with st.session_state.plot_container:
             )
             
             # Add size scale reference

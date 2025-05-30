@@ -215,87 +215,92 @@ def update_visualizations():
         best_cap_eff = df.loc[df["Capital Efficiency Score"].idxmax()]
         oldest_company = df.loc[df["Age (Years)"].idxmax()]
         
-        # Metrics row
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Median $/Employee", f"${median_cap_eff:,.2f}")
-        with col2:
-            st.metric(
-                "Best $/Employee",
-                f"${best_cap_eff['Capital Efficiency Score']:,.2f}"
-                f"\n\n{best_cap_eff['Company Name']}"
+        # Create metrics section
+        with st.container():
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Median $/Employee", f"${median_cap_eff:,.2f}")
+            with col2:
+                st.metric(
+                    "Best $/Employee",
+                    f"${best_cap_eff['Capital Efficiency Score']:,.2f}"
+                    f"\n\n{best_cap_eff['Company Name']}"
+                )
+            with col3:
+                st.metric(
+                    "Oldest Company",
+                    f"{oldest_company['Age (Years)']:.1f} years"
+                    f"\n\n{oldest_company['Company Name']}"
+                )
+        
+        # Create plot section
+        with st.container():
+            # Enhanced scatter plot
+            fig = px.scatter(
+                df,
+                x="Age (Years)",
+                y="Capital Efficiency Score",
+                size="Funding (USD)",
+                color="Country",
+                hover_data={
+                    "Company Name": True,
+                    "Country": True,
+                    "Funding (USD)": ":.2f",
+                    "Employee Count": True,
+                    "Capital Efficiency Score": ":.2f",
+                    "Age (Years)": ":.1f"
+                },
+                title="Capital Efficiency Radar",
+                labels={
+                    "Age (Years)": "Company Age (Years)",
+                    "Capital Efficiency Score": "$ per Employee",
+                    "Funding (USD)": "Funding (USD)"
+                }
             )
-        with col3:
-            st.metric(
-                "Oldest Company",
-                f"{oldest_company['Age (Years)']:.1f} years"
-                f"\n\n{oldest_company['Company Name']}"
+            
+            # Add size scale reference
+            fig.update_layout(
+                autosize=True,
+                margin=dict(l=0, r=0, t=30, b=0),
+                hovermode="closest",
+                showlegend=True,
+                legend_title="Country"
             )
+            
+            # Add size scale reference
+            fig.add_annotation(
+                x=0.95,
+                y=0.95,
+                xref="paper",
+                yref="paper",
+                text="Size represents funding amount",
+                showarrow=False,
+                font=dict(size=10)
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
         
-        # Enhanced scatter plot
-        fig = px.scatter(
-            df,
-            x="Age (Years)",
-            y="Capital Efficiency Score",
-            size="Funding (USD)",
-            color="Country",
-            hover_data={
-                "Company Name": True,
-                "Country": True,
-                "Funding (USD)": ":.2f",
-                "Employee Count": True,
-                "Capital Efficiency Score": ":.2f",
-                "Age (Years)": ":.1f"
-            },
-            title="Capital Efficiency Radar",
-            labels={
-                "Age (Years)": "Company Age (Years)",
-                "Capital Efficiency Score": "$ per Employee",
-                "Funding (USD)": "Funding (USD)"
-            }
-        )
-        
-        # Add size scale reference
-        fig.update_layout(
-            autosize=True,
-            margin=dict(l=0, r=0, t=30, b=0),
-            hovermode="closest",
-            showlegend=True,
-            legend_title="Country"
-        )
-        
-        # Add size scale reference
-        fig.add_annotation(
-            x=0.95,
-            y=0.95,
-            xref="paper",
-            yref="paper",
-            text="Size represents funding amount",
-            showarrow=False,
-            font=dict(size=10)
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
-        
-        # Download button
-        csv_buffer = io.StringIO()
-        df.to_csv(csv_buffer, index=False)
-        st.download_button(
-            label="Download CSV",
-            data=csv_buffer.getvalue(),
-            file_name="radar.csv",
-            mime="text/csv"
-        )
-        
-        # Display table with Streamlit's built-in functionality
-        st.dataframe(
-            df.style.format({
-                "Capital Efficiency Score": "${:,.2f}",
-                "Funding (USD)": "${:,.2f}",
-                "Age (Years)": "{:.1f}"
-            }),
-            use_container_width=True
-        )
+        # Create download and table section
+        with st.container():
+            # Download button
+            csv_buffer = io.StringIO()
+            df.to_csv(csv_buffer, index=False)
+            st.download_button(
+                label="Download CSV",
+                data=csv_buffer.getvalue(),
+                file_name="radar.csv",
+                mime="text/csv"
+            )
+            
+            # Display table with Streamlit's built-in functionality
+            st.dataframe(
+                df.style.format({
+                    "Capital Efficiency Score": "${:,.2f}",
+                    "Funding (USD)": "${:,.2f}",
+                    "Age (Years)": "{:.1f}"
+                }),
+                use_container_width=True
+            )
     else:
         st.write("No companies added yet. Add companies using the sidebar.")
 

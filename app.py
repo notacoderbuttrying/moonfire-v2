@@ -337,19 +337,19 @@ def update_visualizations():
 # Sidebar layout
 with st.sidebar:
     st.title("Settings")
-    
+
     company_input = st.text_input("Crunchbase UUID or Name")
     if st.button("Add Company"):
         add_company(company_input)
-    
-    # Test UUIDs for demonstration
-    test_uuids = {
-        "OpenAI": "716f3613-036e-4814-9003-779526b58f0c",
-        "GitHub": "6393c62a-4c5a-456a-9737-950356d72814"
-    }
+
+    st.sidebar.markdown("---")
     if st.sidebar.button("Add Test Companies"):
-        for name, uuid in test_uuids.items():
-            add_company(uuid)
+        test_companies = [
+            {"name": "OpenAI", "uuid": "716f3613-036e-4814-9003-779526b58f0c"},
+            {"name": "GitHub", "uuid": "6393c62a-4c5a-456a-9737-950356d72814"}
+        ]
+        for company in test_companies:
+            add_company(company["uuid"])
 
 # Main content
 st.title("Capital-Efficiency Radar")

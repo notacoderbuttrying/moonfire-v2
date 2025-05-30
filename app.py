@@ -115,9 +115,14 @@ def fetch_company(info_id: str) -> Dict:
     if not api_key:
         raise ValueError("PILOTERR_API_KEY environment variable not set")
     
+    # Debug logging
+    logger.info(f"Fetching company info for: {info_id}")
+    logger.info(f"Using API key: {api_key[:4]}...{api_key[-4:]}")  # Masked for security
+    
     base_url = "https://piloterr.com/api/v2/crunchbase/company/info"
     headers = {
-        "x-api-key": api_key
+        "x-api-key": api_key,
+        "Content-Type": "application/json"
     }
     
     if "-" in info_id:  # UUID
@@ -127,6 +132,30 @@ def fetch_company(info_id: str) -> Dict:
     
     try:
         response = requests.get(base_url, headers=headers, params=params)
+        logger.info(f"API Response Status: {response.status_code}")
+        logger.info(f"API Response Headers: {response.headers}")
+        
+        if response.status_code == 404:
+            # Try the alternative endpoint for company search
+            search_url = "https://piloterr.com/api/v2/crunchbase/company/search"
+            search_response = requests.get(search_url, headers=headers, params={"query": info_id})
+            search_data = search_response.json()
+            
+            if search_response.status_code == 200 and search_data.get("data"):  # Using 'data' instead of 'companies'
+                company_data = search_data["data"][0]
+                return {
+                    "company": company_data.get("name", "Unknown"),
+                    "country": company_data.get("country_code", "Unknown"),
+                    "employee_min": int(company_data.get("num_employees_min", 0)),
+                    "funding_usd": float(company_data.get("total_funding_usd", 0)),
+                    "founded_on": company_data.get("founded_on", "Unknown"),
+                    "website": company_data.get("website", "Unknown"),
+                    "category_list": ", ".join(company_data.get("categories", [])),
+                    "tags": ", ".join(company_data.get("tags", []))
+                }
+            else:
+                raise ValueError(f"Company not found: {info_id}")
+        
         response.raise_for_status()
         data = response.json()
         
@@ -138,17 +167,18 @@ def fetch_company(info_id: str) -> Dict:
             
         # Extract required fields with safe defaults
         return {
-            "company": data.get("company", "Unknown"),
-            "country": data.get("country", "Unknown"),
-            "employee_min": int(data.get("employee_min", 0)),
-            "funding_usd": float(data.get("funding_usd", 0)),
+            "company": data.get("name", "Unknown"),  # Changed from 'company' to 'name'
+            "country": data.get("country_code", "Unknown"),  # Changed from 'country' to 'country_code'
+            "employee_min": int(data.get("num_employees_min", 0)),  # Changed from 'employee_min'
+            "funding_usd": float(data.get("total_funding_usd", 0)),  # Changed from 'funding_usd'
             "founded_on": data.get("founded_on", "Unknown"),
             "website": data.get("website", "Unknown"),
-            "category_list": ", ".join(data.get("category_list", [])),
+            "category_list": ", ".join(data.get("categories", [])),  # Changed from 'category_list'
             "tags": ", ".join(data.get("tags", []))
         }
     except requests.RequestException as e:
         logger.error(f"API request failed: {e}")
+        logger.error(f"Response content: {response.text if 'response' in locals() else 'No response'}")
         raise
     except (ValueError, TypeError) as e:
         logger.error(f"Error processing response: {e}")

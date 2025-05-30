@@ -9,6 +9,7 @@ from typing import Dict, Optional
 import io
 import os
 from dotenv import load_dotenv
+import re
 
 # Page configuration must be first
 st.set_page_config(

@@ -48,56 +48,219 @@ logger = logging.getLogger(__name__)
 # Custom theme
 st.markdown("""
 <style>
-[data-testid="stMetric"] {
-    background-color: #2b2b2b;
-    border-radius: 8px;
-    padding: 1rem;
-    margin: 0.5rem;
-    color: #fff;
+/* Global Styles */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Header Styles */
+[data-testid="stHeader"] {
+    background-color: #ffffff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Sidebar Styles */
+[data-testid="stSidebar"] {
+    background-color: #ffffff;
+    padding: 2rem;
+    border-right: 1px solid #e9ecef;
+}
+
+[data-testid="stSidebar"] > div {
+    padding: 0;
+}
+
+/* Main Content Styles */
+[data-testid="stAppViewContainer"] {
+    background-color: #ffffff;
+}
+
+/* Card Styles */
+[data-testid="stCard"] {
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    margin: 1rem;
+}
+
+/* Metric Styles */
+[data-testid="stMetric"] {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+[data-testid="stMetric"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Button Styles */
 [data-testid="stButton"] > button {
-    background-color: #4CAF50;
+    background-color: #007bff;
     color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 [data-testid="stButton"] > button:hover {
-    background-color: #45a049;
+    background-color: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-.st-aggrid-table {
-    background-color: #2b2b2b;
-    color: #fff;
+[data-testid="stButton"] > button:active {
+    transform: translateY(0);
 }
 
-.st-aggrid .ag-header-cell {
-    background-color: #3b3b3b !important;
-    color: #fff !important;
-}
-
-.st-aggrid .ag-cell {
-    background-color: #2b2b2b !important;
-    color: #fff !important;
-}
-
+/* Table Styles */
 .stDataFrame {
-    background-color: #2b2b2b;
-    color: #fff;
+    background-color: transparent;
+    color: #333333;
 }
 
 .stDataFrame table {
-    background-color: #2b2b2b !important;
-    color: #fff !important;
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
 }
 
 .stDataFrame th {
-    background-color: #3b3b3b !important;
-    color: #fff !important;
+    background-color: #f8f9fa;
+    color: #333333;
+    font-weight: 600;
+    padding: 1rem;
+    border-bottom: 2px solid #e9ecef;
 }
 
 .stDataFrame td {
-    background-color: #2b2b2b !important;
-    color: #fff !important;
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.stDataFrame tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Plot Styles */
+[data-testid="stPlotlyChart"] {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Input Styles */
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select {
+    background-color: #ffffff;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin: 0.5rem 0;
+    transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="date"]:focus,
+select:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+}
+
+/* Alert Styles */
+[data-testid="stAlert"] {
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Loading Spinner */
+[data-testid="stSpinner"] {
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Title and Header Styles */
+[data-testid="stMarkdownContainer"] h1 {
+    color: #2c3e50;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+}
+
+[data-testid="stMarkdownContainer"] h2 {
+    color: #34495e;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+/* Link Styles */
+a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+a:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* Custom Metrics */
+.stMetricValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+}
+
+.stMetricLabel {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+}
+
+/* Custom Colors */
+.positive {
+    color: #28a745;
+}
+
+.negative {
+    color: #dc3545;
+}
+
+.neutral {
+    color: #6c757d;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    [data-testid="stSidebar"] {
+        padding: 1rem;
+    }
+    
+    [data-testid="stCard"] {
+        margin: 0.5rem;
+    }
+    
+    [data-testid="stMetric"] {
+        margin: 0.5rem;
+    }
 }
 </style>
 """, unsafe_allow_html=True)

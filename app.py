@@ -156,10 +156,6 @@ def fetch_company(info_id: str) -> Dict:
 
 def add_company(company_input: str):
     """Add a company to the DataFrame."""
-    if not st.session_state["api_key"]:
-        st.error("Please enter your Piloterr API key first")
-        return
-    
     try:
         company_data = fetch_company(company_input)
         

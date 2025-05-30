@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from streamlit_aggrid import AgGrid, GridOptionsBuilder
+# Removed streamlit-aggrid dependency - using built-in table functionality
 import requests
 from datetime import datetime
 import logging
@@ -271,25 +271,14 @@ def update_visualizations():
             mime="text/csv"
         )
         
-        # Enhanced Ag-Grid
-        gb = GridOptionsBuilder.from_dataframe(df)
-        gb.configure_pagination(paginationAutoPageSize=True)
-        gb.configure_default_column(
-            editable=False,
-            filterable=True,
-            sortable=True
-        )
-        gb.configure_column("Capital Efficiency Score", type="numericColumn", precision=2)
-        gb.configure_column("Funding (USD)", type="numericColumn", precision=2)
-        gb.configure_column("Age (Years)", type="numericColumn", precision=1)
-        gb.configure_column("Employee Count", type="numericColumn")
-        
-        grid_options = gb.build()
-        AgGrid(
-            df,
-            gridOptions=grid_options,
-            enable_enterprise_modules=True,
-            theme="streamlit"
+        # Display table with Streamlit's built-in functionality
+        st.dataframe(
+            df.style.format({
+                "Capital Efficiency Score": "${:,.2f}",
+                "Funding (USD)": "${:,.2f}",
+                "Age (Years)": "{:.1f}"
+            }),
+            use_container_width=True
         )
     else:
         st.write("No companies added yet. Add companies using the sidebar.")

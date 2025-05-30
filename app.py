@@ -125,9 +125,9 @@ def fetch_company(info_id: str) -> Dict:
         logger.error(f"Invalid API key format: {api_key[:4]}...{api_key[-4:]}")
         raise ValueError("Invalid API key format")
     
-    # Add quotes around the API key in headers
+    # Try different header formats
     headers = {
-        "x-api-key": f"\"{api_key}\"",
+        "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
         "Accept": "application/json"
     }
@@ -146,9 +146,40 @@ def fetch_company(info_id: str) -> Dict:
         logger.info(f"API Response Status: {response.status_code}")
         logger.info(f"API Response Headers: {response.headers}")
         
-        if response.status_code == 403:
+        if response.status_code == 401:
+            logger.error(f"401 Unauthorized response received. Headers: {headers}")
+            raise ValueError("API key not authorized. Please check your API key in Streamlit Cloud secrets.")
+        elif response.status_code == 403:
             logger.error(f"403 Forbidden response received. Headers: {headers}")
             raise ValueError("API key not authorized. Please check your API key in Streamlit Cloud secrets.")
+        
+        response.raise_for_status()
+        data = response.json()
+        
+        if "-" not in info_id and isinstance(data, list):
+            # For search results, take the first match
+            if not data:
+                raise ValueError("No company found with that name")
+            data = data[0]
+        
+        # Extract required fields with safe defaults
+        return {
+            "company": data.get("name", "Unknown"),
+            "country": data.get("country_code", "Unknown"),
+            "employee_min": int(data.get("num_employees_min", 0)),
+            "funding_usd": float(data.get("total_funding_usd", 0)),
+            "founded_on": data.get("founded_on", "Unknown"),
+            "website": data.get("website", "Unknown"),
+            "category_list": ", ".join(data.get("categories", [])),
+            "tags": ", ".join(data.get("tags", []))
+        }
+    except requests.RequestException as e:
+        logger.error(f"API request failed: {e}")
+        logger.error(f"Response content: {response.text if 'response' in locals() else 'No response'}")
+        raise
+    except (ValueError, TypeError) as e:
+        logger.error(f"Error processing response: {e}")
+        raise
         
         response.raise_for_status()
         data = response.json()

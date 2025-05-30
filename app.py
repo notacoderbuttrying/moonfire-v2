@@ -50,8 +50,8 @@ st.markdown("""
 <style>
 /* Global Styles */
 body {
-    background-color: #f8f9fa;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #ffffff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 /* Header Styles */
@@ -63,12 +63,7 @@ body {
 /* Sidebar Styles */
 [data-testid="stSidebar"] {
     background-color: #ffffff;
-    padding: 2rem;
-    border-right: 1px solid #e9ecef;
-}
-
-[data-testid="stSidebar"] > div {
-    padding: 0;
+    padding: 1rem;
 }
 
 /* Main Content Styles */
@@ -79,53 +74,41 @@ body {
 /* Card Styles */
 [data-testid="stCard"] {
     background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-    padding: 1.5rem;
-    margin: 1rem;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Metric Styles */
 [data-testid="stMetric"] {
     background-color: #ffffff;
-    border-radius: 12px;
-    padding: 1.25rem;
-    margin: 0.75rem;
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 0.5rem;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s;
-}
-
-[data-testid="stMetric"]:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Button Styles */
 [data-testid="stButton"] > button {
-    background-color: #007bff;
+    background-color: #2563eb;
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 0.75rem 1.5rem;
-    font-weight: 600;
+    border-radius: 6px;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
     transition: all 0.2s;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 [data-testid="stButton"] > button:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-[data-testid="stButton"] > button:active {
-    transform: translateY(0);
+    background-color: #1d4ed8;
+    transform: translateY(-1px);
 }
 
 /* Table Styles */
 .stDataFrame {
-    background-color: transparent;
-    color: #333333;
+    background-color: #ffffff;
+    color: #1e293b;
 }
 
 .stDataFrame table {
@@ -135,28 +118,27 @@ body {
 }
 
 .stDataFrame th {
-    background-color: #f8f9fa;
-    color: #333333;
+    background-color: #f8fafc;
+    color: #1e293b;
     font-weight: 600;
-    padding: 1rem;
-    border-bottom: 2px solid #e9ecef;
+    padding: 0.75rem;
+    border-bottom: 2px solid #e2e8f0;
 }
 
 .stDataFrame td {
-    padding: 1rem;
-    border-bottom: 1px solid #e9ecef;
+    padding: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
 }
 
 .stDataFrame tr:hover {
-    background-color: #f8f9fa;
+    background-color: #f8fafc;
 }
 
 /* Plot Styles */
 [data-testid="stPlotlyChart"] {
     background-color: #ffffff;
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 1rem;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Input Styles */
@@ -165,10 +147,10 @@ input[type="number"],
 input[type="date"],
 select {
     background-color: #ffffff;
-    border: 1px solid #e9ecef;
-    border-radius: 8px;
-    padding: 0.75rem;
-    margin: 0.5rem 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    margin: 0.25rem 0;
     transition: border-color 0.2s;
 }
 
@@ -176,90 +158,88 @@ input[type="text"]:focus,
 input[type="number"]:focus,
 input[type="date"]:focus,
 select:focus {
-    border-color: #007bff;
+    border-color: #3b82f6;
     outline: none;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.1);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
 /* Alert Styles */
 [data-testid="stAlert"] {
-    border-radius: 8px;
+    border-radius: 6px;
     padding: 1rem;
     margin: 1rem 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* Loading Spinner */
 [data-testid="stSpinner"] {
     background-color: rgba(255, 255, 255, 0.9);
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 1rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 /* Title and Header Styles */
 [data-testid="stMarkdownContainer"] h1 {
-    color: #2c3e50;
+    color: #1e293b;
     font-weight: 700;
     margin-bottom: 1.5rem;
 }
 
 [data-testid="stMarkdownContainer"] h2 {
-    color: #34495e;
+    color: #334155;
     font-weight: 600;
     margin-bottom: 1rem;
 }
 
 /* Link Styles */
 a {
-    color: #007bff;
+    color: #3b82f6;
     text-decoration: none;
     font-weight: 500;
 }
 
 a:hover {
-    color: #0056b3;
+    color: #2563eb;
     text-decoration: underline;
 }
 
 /* Custom Metrics */
 .stMetricValue {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: #2c3e50;
+    color: #1e293b;
 }
 
 .stMetricLabel {
     font-size: 0.875rem;
-    color: #6c757d;
+    color: #64748b;
     margin-bottom: 0.5rem;
 }
 
 /* Custom Colors */
 .positive {
-    color: #28a745;
+    color: #16a34a;
 }
 
 .negative {
-    color: #dc3545;
+    color: #dc2626;
 }
 
 .neutral {
-    color: #6c757d;
+    color: #64748b;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
     [data-testid="stSidebar"] {
-        padding: 1rem;
+        padding: 0.5rem;
     }
     
     [data-testid="stCard"] {
-        margin: 0.5rem;
+        margin: 0.25rem;
     }
     
     [data-testid="stMetric"] {
-        margin: 0.5rem;
+        margin: 0.25rem;
     }
 }
 </style>

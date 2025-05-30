@@ -124,8 +124,9 @@ def fetch_company(info_id: str) -> Dict:
         logger.error(f"Invalid API key format: {api_key[:4]}...{api_key[-4:]}")
         raise ValueError("Invalid API key format")
     
+    # Add quotes around the API key in headers
     headers = {
-        "x-api-key": api_key,
+        "x-api-key": f"\"{api_key}\"",
         "Content-Type": "application/json",
         "Accept": "application/json"
     }

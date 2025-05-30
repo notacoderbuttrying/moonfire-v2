@@ -7,6 +7,11 @@ from datetime import datetime
 import logging
 from typing import Dict, Optional
 import io
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -75,9 +80,6 @@ if "df" not in st.session_state:
         "Capital Efficiency Score"
     ])
 
-if "api_key" not in st.session_state:
-    st.session_state["api_key"] = ""
-
 @st.cache_data(ttl=86400, show_spinner=False)
 def fetch_company(info_id: str) -> Dict:
     """
@@ -89,9 +91,13 @@ def fetch_company(info_id: str) -> Dict:
     Returns:
         Dict containing company information
     """
+    api_key = os.getenv("PILOTERR_API_KEY")
+    if not api_key:
+        raise ValueError("PILOTERR_API_KEY environment variable not set")
+    
     base_url = "https://piloterr.com/api/v2/crunchbase/company/info"
     headers = {
-        "x-api-key": st.session_state["api_key"]
+        "x-api-key": api_key
     }
     
     if "-" in info_id:  # UUID
@@ -292,16 +298,19 @@ def update_visualizations():
 with st.sidebar:
     st.title("Settings")
     
-    api_key = st.text_input(
-        "Piloterr API Key",
-        type="password",
-        value=st.session_state.get("api_key", "")
-    )
-    st.session_state["api_key"] = api_key
-    
     company_input = st.text_input("Crunchbase UUID or Name")
     if st.button("Add Company"):
         add_company(company_input)
+    
+    # Test UUIDs for demonstration
+    test_uuids = {
+        "OpenAI": "716f3613-036e-4814-9003-779526b58f0c",
+        "GitHub": "6393c62a-4c5a-456a-9737-950356d72814"
+    }
+    
+    if st.button("Add Test Companies"):
+        for name, uuid in test_uuids.items():
+            add_company(uuid)
     
     # Test UUIDs for demonstration
     test_uuids = {

@@ -9,6 +9,28 @@ from typing import Dict, Optional
 import io
 import os
 from dotenv import load_dotenv
+import time  # Add time import for delays
+import json
+from pathlib import Path
+import hashlib
+
+# Cache directory setup
+cache_dir = Path(".cache")
+if not cache_dir.exists():
+    cache_dir.mkdir()
+
+# Cache file for company data
+cache_file = cache_dir / "company_cache.json"
+
+# Load existing cache if it exists
+company_cache = {}
+if cache_file.exists():
+    try:
+        with open(cache_file, 'r') as f:
+            company_cache = json.load(f)
+    except json.JSONDecodeError:
+        logger.warning("Cache file corrupted. Creating new cache.")
+        company_cache = {}
 
 # Page configuration must be first
 st.set_page_config(
@@ -104,7 +126,7 @@ if "df" not in st.session_state:
 def fetch_company(info_id: str, max_retries: int = 3, backoff_factor: float = 1.5) -> Dict:
     """
     Fetch company information from Piloterr's API with enhanced error handling and rate limiting.
-    Tries multiple endpoints and continues even if some are forbidden.
+    Uses caching to reduce API calls and provides better error messages.
     
     Args:
         info_id: Either a UUID (with '-') or company name
@@ -114,6 +136,12 @@ def fetch_company(info_id: str, max_retries: int = 3, backoff_factor: float = 1.
     Returns:
         Dict containing company information
     """
+    # Check cache first
+    cache_key = hashlib.md5(info_id.encode()).hexdigest()
+    if cache_key in company_cache:
+        logger.info(f"Found company in cache: {info_id}")
+        return company_cache[cache_key]
+    
     api_key = os.getenv("PILOTERR_API_KEY")
     if not api_key:
         raise ValueError("PILOTERR_API_KEY environment variable not set")
@@ -168,7 +196,13 @@ def fetch_company(info_id: str, max_retries: int = 3, backoff_factor: float = 1.
                     time.sleep(wait_time)
                     return make_request(url, retry_count + 1)
                 
-                if retry_count < max_retries and not last_retry:
+                # If we've exceeded max retries and this isn't the last retry, try next endpoint
+                if retry_count >= max_retries and not last_retry:
+                    logger.warning("Maximum retries reached. Trying next endpoint...")
+                    return None
+                
+                # Otherwise, if we haven't exceeded max retries, wait and retry
+                if retry_count < max_retries:
                     wait_time = backoff_factor ** retry_count
                     logger.warning(f"500 Server Error. Retrying in {wait_time:.1f} seconds...")
                     time.sleep(wait_time)
@@ -250,29 +284,34 @@ def fetch_company(info_id: str, max_retries: int = 3, backoff_factor: float = 1.
             "category_list": ", ".join(data.get("categories", [])),
             "tags": ", ".join(data.get("tags", []))
         }
+    except requests.RequestException as e:
+        logger.error(f"API request failed: {e}")
+        raise ValueError(f"Failed to fetch company data. Error: {str(e)}")
+    except ValueError as e:
+        logger.error(f"Value error: {e}")
+        raise ValueError(f"Failed to fetch company data. Error: {str(e)}")
     except Exception as e:
-        logger.error(f"Failed to fetch company data: {e}")
-        raise
+        logger.error(f"Unexpected error: {e}")
+        raise ValueError(f"Failed to fetch company data. Error: {str(e)}")
 
 def add_company(company_input: str):
     """Add a company to the DataFrame."""
     try:
         company_data = fetch_company(company_input)
         
-        # Calculate derived metrics
+        # Calculate age in years
+        age_years = 0
         if company_data["founded_on"] != "Unknown":
             try:
                 founded_date = datetime.strptime(company_data["founded_on"], "%Y-%m-%d")
                 age_years = (datetime.now() - founded_date).days / 365
             except ValueError:
-                age_years = 0
-        else:
-            age_years = 0
-            
-        if company_data["employee_min"] > 0:
-            cap_eff = company_data["funding_usd"] / company_data["employee_min"]
-        else:
-            cap_eff = 0
+                pass
+        
+        # Calculate capital efficiency score
+        cap_eff = 0
+        if company_data["funding_usd"] > 0 and age_years > 0:
+            cap_eff = company_data["funding_usd"] / age_years
             
         # Create new row
         new_row = {
@@ -289,21 +328,22 @@ def add_company(company_input: str):
             "Capital Efficiency Score": cap_eff
         }
         
-        # Add to DataFrame if not already present
-        df = st.session_state["df"]
-        uuid = company_input if "-" in company_input else company_data.get("company", "")
-        if uuid not in df["Crunchbase UUID"].values and uuid not in df["Company Name"].values:
-            df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-            st.session_state["df"] = df
-            st.success("Company added successfully!")
-        else:
-            st.warning("Company already exists in the database")
-            
-        # Update visualization
-        update_visualizations()
+        # Add to DataFrame
+        st.session_state["df"] = pd.concat(
+            [st.session_state["df"], pd.DataFrame([new_row])],
+            ignore_index=True
+        )
         
+        st.success(f"Successfully added {company_data['company']}")
+        update_visualizations()
+    except ValueError as e:
+        # Handle API-related errors with a more user-friendly message
+        if "API" in str(e) or "server" in str(e).lower():
+            st.error(f"API Error: {str(e)}\n\nThe API might be experiencing temporary issues. Please try again later or contact Piloterr support if the problem persists.")
+        else:
+            st.error(f"Error adding company: {str(e)}")
     except Exception as e:
-        st.error(f"Error adding company: {str(e)}")
+        st.error(f"An unexpected error occurred: {str(e)}")
 
 def update_visualizations():
     """Update the plot and table visualizations."""

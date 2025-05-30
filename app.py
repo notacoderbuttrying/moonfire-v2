@@ -119,9 +119,15 @@ def fetch_company(info_id: str) -> Dict:
     logger.info(f"Fetching company info for: {info_id}")
     logger.info(f"Using API key: {api_key[:4]}...{api_key[-4:]}")  # Masked for security
     
+    # Validate API key format
+    if not re.match(r'^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$', api_key):
+        logger.error(f"Invalid API key format: {api_key[:4]}...{api_key[-4:]}")
+        raise ValueError("Invalid API key format")
+    
     headers = {
         "x-api-key": api_key,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Accept": "application/json"
     }
     
     try:
@@ -137,6 +143,10 @@ def fetch_company(info_id: str) -> Dict:
         logger.info(f"API Request URL: {response.url}")
         logger.info(f"API Response Status: {response.status_code}")
         logger.info(f"API Response Headers: {response.headers}")
+        
+        if response.status_code == 403:
+            logger.error(f"403 Forbidden response received. Headers: {headers}")
+            raise ValueError("API key not authorized. Please check your API key in Streamlit Cloud secrets.")
         
         response.raise_for_status()
         data = response.json()

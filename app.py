@@ -10,6 +10,12 @@ import io
 import os
 from dotenv import load_dotenv
 
+# Page configuration must be first
+st.set_page_config(
+    page_title="Capital-Efficiency Radar",
+    layout="wide"
+)
+
 # Load environment variables
 load_dotenv()
 
@@ -51,18 +57,32 @@ st.markdown("""
     background-color: #2b2b2b !important;
     color: #fff !important;
 }
+
+.stDataFrame {
+    background-color: #2b2b2b;
+    color: #fff;
+}
+
+.stDataFrame table {
+    background-color: #2b2b2b !important;
+    color: #fff !important;
+}
+
+.stDataFrame th {
+    background-color: #3b3b3b !important;
+    color: #fff !important;
+}
+
+.stDataFrame td {
+    background-color: #2b2b2b !important;
+    color: #fff !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Page configuration
-st.set_page_config(
-    page_title="Capital-Efficiency Radar",
-    layout="wide"
-)
 
 # Initialize session state
 if "df" not in st.session_state:

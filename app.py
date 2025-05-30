@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from st_aggrid import AgGrid, GridOptionsBuilder
+from streamlit_aggrid import AgGrid, GridOptionsBuilder
 import requests
 from datetime import datetime
 import logging

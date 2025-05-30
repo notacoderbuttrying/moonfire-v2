@@ -316,28 +316,10 @@ with st.sidebar:
         "OpenAI": "716f3613-036e-4814-9003-779526b58f0c",
         "GitHub": "6393c62a-4c5a-456a-9737-950356d72814"
     }
-    
-    if st.button("Add Test Companies"):
-        for name, uuid in test_uuids.items():
-            add_company(uuid)
-    
-    # Test UUIDs for demonstration
-    test_uuids = {
-        "OpenAI": "716f3613-036e-4814-9003-779526b58f0c",
-        "GitHub": "6393c62a-4c5a-456a-9737-950356d72814"
-    }
-    
-    if st.button("Add Test Companies"):
+    if st.sidebar.button("Add Test Companies"):
         for name, uuid in test_uuids.items():
             add_company(uuid)
 
 # Main content
 st.title("Capital-Efficiency Radar")
-
-# Add test companies button
-st.sidebar.markdown("---")
-if st.sidebar.button("Add Test Companies"):
-    for name, uuid in test_uuids.items():
-        add_company(uuid)
-
 update_visualizations()

@@ -316,7 +316,7 @@ def update_visualizations():
         with st.container():
             # Download button
             csv_buffer = io.StringIO()
-            df.to_csv(csv_buffer, index=False)
+            st.session_state.df.to_csv(csv_buffer, index=False)
             st.download_button(
                 label="Download CSV",
                 data=csv_buffer.getvalue(),
@@ -326,13 +326,15 @@ def update_visualizations():
             
             # Display table with Streamlit's built-in functionality
             st.dataframe(
-                df.style.format({
+                st.session_state.df.style.format({
                     "Capital Efficiency Score": "${:,.2f}",
                     "Funding (USD)": "${:,.2f}",
                     "Age (Years)": "{:.1f}"
                 }),
                 use_container_width=True
             )
+    except Exception as e:
+        st.error(f"Error updating visualizations: {str(e)}")
     else:
         st.write("No companies added yet. Add companies using the sidebar.")
 

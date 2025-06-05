@@ -464,7 +464,7 @@ with st.sidebar:
             if st.sidebar.button("Remove Selected Company"):
                 if company_to_remove:
                     remove_company(company_to_remove)
-                    st.experimental_rerun() # Ensure UI updates after removal
+                    st.rerun() # Ensure UI updates after removal
                 else:
                     st.sidebar.warning("Please select a company to remove.")
         else:

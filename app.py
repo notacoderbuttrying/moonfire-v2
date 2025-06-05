@@ -25,15 +25,13 @@ cache_file = cache_dir / "company_cache.json"
 
 # Load existing cache if it exists
 company_cache = {}
-# Temporarily disable loading from cache for debugging stale data issue
-# if cache_file.exists():
-#     try:
-#         with open(cache_file, 'r') as f:
-#             company_cache = json.load(f)
-#     except json.JSONDecodeError:
-#         logger.warning("Cache file corrupted. Creating new cache.")
-#         company_cache = {}
-logger.info("Company cache loading temporarily disabled for debugging.")
+if cache_file.exists():
+    try:
+        with open(cache_file, 'r') as f:
+            company_cache = json.load(f)
+    except json.JSONDecodeError:
+        logger.warning("Cache file corrupted. Creating new cache.")
+        company_cache = {}
 
 # Page configuration must be first
 st.set_page_config(

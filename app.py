@@ -420,6 +420,71 @@ with st.sidebar:
         for company in test_companies:
             add_company(company["uuid"])
 
+def remove_company(company_name_to_remove: str):
+    """Remove a company from the DataFrame and cache."""
+    global company_cache # Declare company_cache as global to modify it
+    try:
+        if company_name_to_remove in st.session_state.df["Company Name"].values:
+            # Remove from DataFrame
+            st.session_state.df = st.session_state.df[st.session_state.df["Company Name"] != company_name_to_remove]
+            
+            # Remove from cache (this is a bit indirect due to cache structure)
+            # We need to find which original input (key) led to this company name
+            cache_keys_to_delete = []
+            for key, cached_data in company_cache.items():
+                if isinstance(cached_data, dict) and cached_data.get("name") == company_name_to_remove:
+                    cache_keys_to_delete.append(key)
+            
+            for key in cache_keys_to_delete:
+                if key in company_cache:
+                    del company_cache[key]
+            
+            # Save updated cache
+            with open(cache_file, 'w') as f:
+                json.dump(company_cache, f, indent=4)
+            
+            st.success(f"Successfully removed {company_name_to_remove}.")
+            # st.experimental_rerun() # Rerun to update UI, especially selectbox
+        else:
+            st.warning(f"{company_name_to_remove} not found in the current list.")
+    except Exception as e:
+        st.error(f"Error removing company: {str(e)}")
+
+# Sidebar layout
+with st.sidebar:
+    st.title("Settings")
+
+    company_input = st.text_input("Crunchbase UUID or Name")
+    if st.button("Add Company"):
+        add_company(company_input)
+
+    st.sidebar.markdown("---")
+    if st.sidebar.button("Add Test Companies"):
+        test_companies = [
+            {"name": "OpenAI", "uuid": "716f3613-036e-4814-9003-779526b58f0c"},
+            {"name": "Perplexity AI", "uuid": "perplexity-ai-mock-uuid-001"}
+        ]
+        for company in test_companies:
+            add_company(company["uuid"])
+    
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Manage Companies")
+    if "df" in st.session_state and not st.session_state.df.empty:
+        company_to_remove = st.sidebar.selectbox(
+            "Select company to remove",
+            options=st.session_state.df["Company Name"].unique().tolist(),
+            index=None, # No default selection
+            placeholder="Choose a company..."
+        )
+        if st.sidebar.button("Remove Selected Company"):
+            if company_to_remove:
+                remove_company(company_to_remove)
+                st.experimental_rerun() # Ensure UI updates after removal
+            else:
+                st.sidebar.warning("Please select a company to remove.")
+    else:
+        st.sidebar.info("No companies added yet to manage.")
+
 # Main content
 st.title("Capital-Efficiency Radar")
 update_visualizations()

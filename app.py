@@ -298,7 +298,6 @@ def update_visualizations():
             st.session_state.plot_container = st.container()
         
         with st.session_state.plot_container:
-            )
             
             # Add size scale reference
             fig.add_annotation(

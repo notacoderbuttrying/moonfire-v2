@@ -185,6 +185,35 @@ def fetch_company(info_id: str) -> Optional[Dict]:
                 "num_funding_rounds": 2
             },
             "operating_status": "active",
+        },
+        "anthropic-mock-uuid-002": { # Anthropic
+            "uuid": "anthropic-mock-uuid-002",
+            "logo": "https://pbs.twimg.com/profile_images/1636530473469095936/2UeSA05x_400x400.jpg",
+            "name": "Anthropic",
+            "tags": ["ai", "large language model", "ai safety"],
+            "founded": "2021-01-01", # Approximate
+            "website": "https://www.anthropic.com",
+            "headline": "Anthropic is an AI safety and research company.",
+            "location": [
+                {"name": "San Francisco", "type": "city"},
+                {"name": "California", "type": "region"},
+                {"name": "United States", "type": "country"},
+                {"name": "North America", "type": "continent"}
+            ],
+            "categories": [
+                {"name": "Artificial Intelligence (AI)"},
+                {"name": "Generative AI"},
+                {"name": "Machine Learning"},
+                {"name": "AI Safety"}
+            ],
+            "description": "Anthropic builds reliable, interpretable, and steerable AI systems.",
+            "company_type": "for profit",
+            "employee_count": "501-1000", # Estimated
+            "funding_rounds_headline": {
+                "funding_total": {"value_usd": 7300000000}, # Approx $7.3B
+                "num_funding_rounds": 5 # Estimated
+            },
+            "operating_status": "active",
         }
     }
 

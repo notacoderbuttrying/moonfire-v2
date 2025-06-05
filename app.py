@@ -13,6 +13,7 @@ import time  # Add time import for delays
 import json
 from pathlib import Path
 import hashlib
+import copy # For deep copying mock data
 
 # Cache directory setup
 cache_dir = Path(".cache")
@@ -123,46 +124,81 @@ if "df" not in st.session_state:
     ])
 
 @st.cache_data(ttl=86400, show_spinner=False)
-def fetch_company(info_id: str):
+def fetch_company(info_id: str) -> Optional[Dict]:
     """
-    Return static OpenAI data instead of making API calls.
+    Return mock company data for OpenAI or Perplexity AI.
+    Simulates an API call for proof-of-concept.
     """
-    return {
-        "logo": "https://images.crunchbase.com/image/upload/c_pad,h_45,w_45,f_auto,b_white,q_auto:eco,dpr_1/jjykwqqhsscreywea4gb",
-        "name": "OpenAI",
-        "tags": ["unicorn"],
-        "founded": "2015-12-11",
-        "website": "https://www.openai.com",
-        "headline": "OpenAI creates artificial intelligence technologies to assist with tasks and provide support for human activities.",
-        "location": [
-            {"name": "San Francisco", "type": "city"},
-            {"name": "California", "type": "region"},
-            {"name": "United States", "type": "country"},
-            {"name": "North America", "type": "continent"}
-        ],
-        "categories": [
-            {"name": "Artificial Intelligence (AI)"},
-            {"name": "Generative AI"},
-            {"name": "Machine Learning"},
-            {"name": "Natural Language Processing"},
-            {"name": "SaaS"}
-        ],
-        "description": "OpenAI is an AI research and deployment company that conducts research and develops machine learning technologies. OpenAI works on projects that involve autonomous learning and task performance. It serves industries such as technology, healthcare, and education.",
-        "company_type": "for profit",
-        "phone_number": "(800) 217-3145",
-        "employee_count": "1001-5000",
-        "semrush_summary": {"semrush_global_rank": 31, "semrush_visits_latest_month": 1443825092},
-        "social_networks": [
-            {"url": "https://www.facebook.com/openai", "name": "facebook"},
-            {"url": "https://www.linkedin.com/company/openai", "name": "linkedin"},
-            {"url": "https://x.com/OpenAI", "name": "twitter"}
-        ],
-        "operating_status": "active",
-        "funding_rounds_headline": {
-            "funding_total": {"value": 61900120000, "currency": "USD", "value_usd": 61900120000},
-            "num_funding_rounds": 11
+    MOCK_COMPANY_DATA = {
+        "716f3613-036e-4814-9003-779526b58f0c": { # OpenAI
+            "uuid": "716f3613-036e-4814-9003-779526b58f0c",
+            "logo": "https://images.crunchbase.com/image/upload/c_pad,h_45,w_45,f_auto,b_white,q_auto:eco,dpr_1/jjykwqqhsscreywea4gb",
+            "name": "OpenAI",
+            "tags": ["unicorn", "ai", "large language model"],
+            "founded": "2015-12-11",
+            "website": "https://www.openai.com",
+            "headline": "OpenAI creates artificial intelligence technologies.",
+            "location": [
+                {"name": "San Francisco", "type": "city"},
+                {"name": "California", "type": "region"},
+                {"name": "United States", "type": "country"},
+                {"name": "North America", "type": "continent"}
+            ],
+            "categories": [
+                {"name": "Artificial Intelligence (AI)"},
+                {"name": "Generative AI"},
+                {"name": "Machine Learning"}
+            ],
+            "description": "OpenAI is an AI research and deployment company.",
+            "company_type": "for profit",
+            "employee_count": "1001-5000",
+            "funding_rounds_headline": {
+                "funding_total": {"value_usd": 61900000000},
+                "num_funding_rounds": 11
+            },
+            "operating_status": "active",
+        },
+        "perplexity-ai-mock-uuid-001": { # Perplexity AI
+            "uuid": "perplexity-ai-mock-uuid-001",
+            "logo": "https://pbs.twimg.com/profile_images/1743001781703843840/G3ht02qE_400x400.jpg",
+            "name": "Perplexity AI",
+            "tags": ["ai search", "answer engine"],
+            "founded": "2022-08-01",
+            "website": "https://www.perplexity.ai",
+            "headline": "Perplexity AI is an AI-powered answer engine.",
+            "location": [
+                {"name": "San Francisco", "type": "city"},
+                {"name": "California", "type": "region"},
+                {"name": "United States", "type": "country"},
+                {"name": "North America", "type": "continent"}
+            ],
+            "categories": [
+                {"name": "Artificial Intelligence (AI)"},
+                {"name": "Search Engine"},
+                {"name": "Conversational AI"}
+            ],
+            "description": "Perplexity AI provides direct, accurate answers to questions using large language models.",
+            "company_type": "for profit",
+            "employee_count": "51-200",
+            "funding_rounds_headline": {
+                "funding_total": {"value_usd": 100000000}, # Approx $100M
+                "num_funding_rounds": 2
+            },
+            "operating_status": "active",
         }
     }
+
+    # Try to find by UUID
+    if info_id in MOCK_COMPANY_DATA:
+        return copy.deepcopy(MOCK_COMPANY_DATA[info_id])
+
+    # Try to find by name (case-insensitive)
+    for company_uuid, company_data in MOCK_COMPANY_DATA.items():
+        if company_data.get("name", "").lower() == info_id.lower():
+            return copy.deepcopy(company_data)
+
+    logger.info(f"Mock data not found for {info_id}. You can add it to MOCK_COMPANY_DATA in fetch_company.")
+    return None
 
 def add_company(company_input: str):
     """Add a company to the DataFrame."""
@@ -350,7 +386,7 @@ with st.sidebar:
     if st.sidebar.button("Add Test Companies"):
         test_companies = [
             {"name": "OpenAI", "uuid": "716f3613-036e-4814-9003-779526b58f0c"},
-            {"name": "GitHub", "uuid": "6393c62a-4c5a-456a-9737-950356d72814"}
+            {"name": "Perplexity AI", "uuid": "perplexity-ai-mock-uuid-001"}
         ]
         for company in test_companies:
             add_company(company["uuid"])

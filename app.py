@@ -316,8 +316,11 @@ def remove_company(company_name_to_remove: str):
     global company_cache # Declare company_cache as global to modify it
     try:
         if company_name_to_remove in st.session_state.df["Company Name"].values:
-            # Remove from DataFrame
-            st.session_state.df = st.session_state.df[st.session_state.df["Company Name"] != company_name_to_remove]
+            # Create a new DataFrame without the company
+            new_df = st.session_state.df[st.session_state.df["Company Name"] != company_name_to_remove]
+            
+            # Update session state with new DataFrame
+            st.session_state.df = new_df
             
             # Remove from cache
             cache_keys_to_delete = []
@@ -334,6 +337,11 @@ def remove_company(company_name_to_remove: str):
                 json.dump(company_cache, f, indent=4)
             
             st.success(f"Successfully removed {company_name_to_remove}.")
+            
+            # Force a re-render by updating a dummy state variable
+            if 'dummy_update' not in st.session_state:
+                st.session_state.dummy_update = 0
+            st.session_state.dummy_update += 1
         else:
             st.warning(f"{company_name_to_remove} not found in the current list.")
     except Exception as e:
@@ -464,7 +472,6 @@ with st.sidebar:
             if st.sidebar.button("Remove Selected Company"):
                 if company_to_remove:
                     remove_company(company_to_remove)
-                    st.rerun() # Ensure UI updates after removal
                 else:
                     st.sidebar.warning("Please select a company to remove.")
         else:
